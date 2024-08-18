@@ -1,4 +1,4 @@
-import { Alert, StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, StyleSheet, Text, View } from "react-native";
 import Title from "../components/ui/Title";
 import { useEffect, useState } from "react";
 import NumberContainer from "../components/game/NumberContainer";
@@ -6,6 +6,7 @@ import PrimaryBtn from "../components/ui/PrimaryBtn";
 import Card from "../components/ui/Card";
 import InstructionText from "../components/ui/InstructionText";
 import { Ionicons } from "@expo/vector-icons";
+import GuessLogItem from "../components/game/GuessLogItem";
 
 function generateRandomNumberBetween(min, max, exclude) {
   const rndNum = Math.floor(Math.random() * (max - min)) + min;
@@ -21,15 +22,20 @@ let minVal = 1;
 let maxVal = 100;
 
 const GameScreen = ({ userNumber, onGameOver }) => {
-  const [currentGuess, setCurrentGuess] = useState(
-    generateRandomNumberBetween(1, 100, userNumber)
-  );
+  const initialGuess = generateRandomNumberBetween(1, 100, userNumber);
+  const [currentGuess, setCurrentGuess] = useState(initialGuess);
+  const [guessLogs, setGuessLogs] = useState([initialGuess]);
 
   useEffect(() => {
     if (currentGuess === userNumber) {
-      onGameOver();
+      onGameOver(guessRoundLength);
     }
   }, [currentGuess, userNumber, onGameOver]);
+
+  useEffect(() => {
+    minVal = 1;
+    maxVal = 100;
+  }, []);
 
   function nextGuessHandler(direction) {
     // direction => 'lower' or 'greater'
@@ -52,7 +58,10 @@ const GameScreen = ({ userNumber, onGameOver }) => {
     }
     const newRndNum = generateRandomNumberBetween(minVal, maxVal, currentGuess);
     setCurrentGuess(newRndNum);
+    setGuessLogs((prevState) => [newRndNum, ...prevState]);
   }
+
+  const guessRoundLength = guessLogs.length;
 
   return (
     <View style={styles.screen}>
@@ -75,8 +84,17 @@ const GameScreen = ({ userNumber, onGameOver }) => {
           </View>
         </View>
       </Card>
-      <View>
-        <Text>LOG rounds</Text>
+      <View style={styles.listContainer}>
+        <FlatList
+          data={guessLogs}
+          renderItem={(itemData) => (
+            <GuessLogItem
+              roundNumber={guessRoundLength - itemData.index}
+              guess={itemData.item}
+            />
+          )}
+          keyExtractor={(item) => item}
+        />
       </View>
     </View>
   );
@@ -96,6 +114,10 @@ const styles = StyleSheet.create({
   },
   btnContainer: {
     flex: 1,
+  },
+  listContainer: {
+    flex: 1,
+    padding: 16,
   },
 });
 
